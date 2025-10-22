@@ -34,17 +34,18 @@ const Index = () => {
   const [achievements, setAchievements] = useState<any[]>([]);
 
   useEffect(() => {
+    // Only redirect after loading is complete and user is not authenticated
     if (!authLoading && !user) {
-      navigate('/auth');
+      navigate('/auth', { replace: true });
     }
   }, [user, authLoading, navigate]);
 
   useEffect(() => {
-    if (user) {
+    if (user && !authLoading) {
       refreshProgress();
       fetchAchievements();
     }
-  }, [user]);
+  }, [user, authLoading]);
 
   const fetchAchievements = async () => {
     if (!user) return;

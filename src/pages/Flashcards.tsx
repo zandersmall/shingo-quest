@@ -5,6 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import StatCard from "@/components/StatCard";
 import Navigation from "@/components/Navigation";
 import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
+import { useAuth } from "@/hooks/useAuth";
 
 interface DeckStats {
   total: number;
@@ -59,10 +61,17 @@ const decks: Deck[] = [
 
 const Flashcards = () => {
   const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
   const totalDue = decks.reduce((sum, deck) => sum + deck.dueToday, 0);
   const totalCards = decks.reduce((sum, deck) => sum + deck.stats.total, 0);
   const totalReview = decks.reduce((sum, deck) => sum + deck.stats.review, 0);
   const totalNew = decks.reduce((sum, deck) => sum + deck.stats.new, 0);
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate('/auth', { replace: true });
+    }
+  }, [user, authLoading, navigate]);
 
   return (
     <div className="min-h-screen bg-background">

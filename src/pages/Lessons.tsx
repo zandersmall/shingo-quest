@@ -63,14 +63,14 @@ const lessons: Lesson[] = [
 
 const Lessons = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { lessons: lessonProgressData } = useLessonProgress();
 
   useEffect(() => {
-    if (!user) {
-      navigate('/auth');
+    if (!authLoading && !user) {
+      navigate('/auth', { replace: true });
     }
-  }, [user, navigate]);
+  }, [user, authLoading, navigate]);
 
   const getLessonData = (lessonId: number) => {
     const lessonProgress = lessonProgressData.find(l => l.lesson_id === lessonId.toString());

@@ -14,7 +14,7 @@ const QuizView = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { saveScore } = useQuizScores();
   const { progress, updateProgress } = useUserProgress();
   const quiz = getQuizById(Number(id));
@@ -25,10 +25,10 @@ const QuizView = () => {
   const [timeLeft, setTimeLeft] = useState(quiz?.timeLimit || 0);
 
   useEffect(() => {
-    if (!user) {
-      navigate('/auth');
+    if (!authLoading && !user) {
+      navigate('/auth', { replace: true });
     }
-  }, [user, navigate]);
+  }, [user, authLoading, navigate]);
 
   useEffect(() => {
     if (!showResults && timeLeft > 0) {

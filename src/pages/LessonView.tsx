@@ -15,7 +15,7 @@ const LessonView = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { updateLesson } = useLessonProgress();
   const { progress, updateProgress } = useUserProgress();
   const lesson = getLessonById(Number(id));
@@ -25,10 +25,10 @@ const LessonView = () => {
   const [showFeedback, setShowFeedback] = useState(false);
 
   useEffect(() => {
-    if (!user) {
-      navigate('/auth');
+    if (!authLoading && !user) {
+      navigate('/auth', { replace: true });
     }
-  }, [user, navigate]);
+  }, [user, authLoading, navigate]);
 
   useEffect(() => {
     if (lesson && user) {

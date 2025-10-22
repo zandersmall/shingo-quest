@@ -84,14 +84,14 @@ const difficultyColors = {
 
 const Quizzes = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { scores } = useQuizScores();
 
   useEffect(() => {
-    if (!user) {
-      navigate('/auth');
+    if (!authLoading && !user) {
+      navigate('/auth', { replace: true });
     }
-  }, [user, navigate]);
+  }, [user, authLoading, navigate]);
 
   const getBestScore = (quizId: number) => {
     const quizScores = scores.filter(s => s.quiz_id === quizId.toString());

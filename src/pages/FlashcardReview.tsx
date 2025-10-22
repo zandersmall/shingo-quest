@@ -7,14 +7,22 @@ import { roadSigns } from "@/data/roadSigns";
 import { updateFlashcardProgress, addXP } from "@/lib/storage";
 import { useToast } from "@/hooks/use-toast";
 import Navigation from "@/components/Navigation";
+import { useAuth } from "@/hooks/useAuth";
 
 const FlashcardReview = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user, loading: authLoading } = useAuth();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [reviewedCount, setReviewedCount] = useState(0);
   const [cards] = useState(roadSigns);
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate('/auth', { replace: true });
+    }
+  }, [user, authLoading, navigate]);
 
   const currentCard = cards[currentIndex];
 
