@@ -3,6 +3,9 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Navigation from "@/components/Navigation";
+import { useNavigate } from "react-router-dom";
+import { getProgress } from "@/lib/storage";
+import { useEffect, useState } from "react";
 
 interface Quiz {
   id: number;
@@ -79,6 +82,13 @@ const difficultyColors = {
 };
 
 const Quizzes = () => {
+  const navigate = useNavigate();
+  const [progress, setProgress] = useState(getProgress());
+
+  useEffect(() => {
+    setProgress(getProgress());
+  }, []);
+
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
@@ -100,6 +110,7 @@ const Quizzes = () => {
             <Card
               key={quiz.id}
               className="p-6 hover:shadow-card-hover transition-all cursor-pointer space-y-4"
+              onClick={() => navigate(`/quizzes/${quiz.id}`)}
             >
               <div className="space-y-3">
                 <div className="flex items-start justify-between">
@@ -129,19 +140,19 @@ const Quizzes = () => {
                 </div>
               </div>
 
-              {quiz.bestScore && (
+              {progress.quizScores[quiz.id] && (
                 <div className="flex items-center gap-2 p-3 bg-primary/5 rounded-lg">
                   <Trophy className="w-5 h-5 text-primary" />
                   <span className="text-sm font-medium">
-                    Best Score: {quiz.bestScore}%
+                    Best Score: {progress.quizScores[quiz.id]}%
                   </span>
                   <Star className="w-4 h-4 text-warning ml-auto" />
                 </div>
               )}
 
               <div className="pt-2">
-                <Button className="w-full">
-                  {quiz.bestScore ? "Retake Quiz" : "Start Quiz"}
+                <Button className="w-full" onClick={() => navigate(`/quizzes/${quiz.id}`)}>
+                  {progress.quizScores[quiz.id] ? "Retake Quiz" : "Start Quiz"}
                 </Button>
                 {quiz.bonusXp > 0 && (
                   <p className="text-xs text-center text-muted-foreground mt-2">

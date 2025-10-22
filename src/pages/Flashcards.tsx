@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import StatCard from "@/components/StatCard";
 import Navigation from "@/components/Navigation";
+import { useNavigate } from "react-router-dom";
 
 interface DeckStats {
   total: number;
@@ -57,6 +58,7 @@ const decks: Deck[] = [
 ];
 
 const Flashcards = () => {
+  const navigate = useNavigate();
   const totalDue = decks.reduce((sum, deck) => sum + deck.dueToday, 0);
   const totalCards = decks.reduce((sum, deck) => sum + deck.stats.total, 0);
   const totalReview = decks.reduce((sum, deck) => sum + deck.stats.review, 0);
@@ -118,7 +120,7 @@ const Flashcards = () => {
                   Keep your streak going and master these signs!
                 </p>
               </div>
-              <Button size="lg" className="ml-4">
+              <Button size="lg" className="ml-4" onClick={() => navigate("/flashcards/review")}>
                 Study All
               </Button>
             </div>
@@ -175,6 +177,7 @@ const Flashcards = () => {
                   <Button
                     className="w-full"
                     variant={deck.dueToday > 0 ? "default" : "outline"}
+                    onClick={() => navigate("/flashcards/review")}
                   >
                     {deck.dueToday > 0 ? "Study Now" : "Browse Cards"}
                   </Button>

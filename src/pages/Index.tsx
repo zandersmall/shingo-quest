@@ -21,13 +21,18 @@ import SignCard from "@/components/SignCard";
 import { roadSigns } from "@/data/roadSigns";
 import Navigation from "@/components/Navigation";
 import { useNavigate } from "react-router-dom";
+import { getProgress } from "@/lib/storage";
+import { useEffect } from "react";
 
 const Index = () => {
-  const [xp] = useState(1250);
-  const [streak] = useState(7);
-  const [level] = useState(5);
-  const [signsLearned] = useState(42);
   const navigate = useNavigate();
+  const [progress, setProgress] = useState(getProgress());
+
+  useEffect(() => {
+    setProgress(getProgress());
+  }, []);
+
+  const { xp, level, streak, signsLearned } = progress;
 
   return (
     <div className="min-h-screen bg-background">

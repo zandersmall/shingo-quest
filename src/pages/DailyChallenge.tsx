@@ -4,6 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import StatCard from "@/components/StatCard";
 import Navigation from "@/components/Navigation";
+import { useNavigate } from "react-router-dom";
+import { getProgress } from "@/lib/storage";
+import { useEffect, useState } from "react";
 
 interface Challenge {
   id: number;
@@ -55,9 +58,18 @@ const challenges: Challenge[] = [
 ];
 
 const DailyChallenge = () => {
+  const navigate = useNavigate();
+  const [progress, setProgress] = useState(getProgress());
+
+  useEffect(() => {
+    setProgress(getProgress());
+  }, []);
+
   const todayChallenge = challenges[0];
-  const completedChallenges = challenges.filter((c) => c.completed).length;
-  const currentStreak = 7;
+  const today = new Date().toISOString().split('T')[0];
+  const isTodayComplete = progress.dailyChallenges[today] || false;
+  const completedChallenges = Object.keys(progress.dailyChallenges).length;
+  const currentStreak = progress.streak;
   const totalXpEarned = completedChallenges * 150;
 
   return (
@@ -144,9 +156,19 @@ const DailyChallenge = () => {
               </div>
 
               <div className="pt-4">
-                <Button size="lg" className="text-lg px-8">
-                  Start Challenge
+                <Button 
+                  size="lg" 
+                  className="text-lg px-8"
+                  onClick={() => navigate("/daily-challenge/play")}
+                  disabled={isTodayComplete}
+                >
+                  {isTodayComplete ? "Completed Today ✓" : "Start Challenge"}
                 </Button>
+                {isTodayComplete && (
+                  <p className="text-sm text-muted-foreground text-center mt-2">
+                    Come back tomorrow for a new challenge!
+                  </p>
+                )}
               </div>
             </div>
           </Card>

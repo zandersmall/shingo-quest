@@ -4,6 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import ProgressBar from "@/components/ProgressBar";
 import Navigation from "@/components/Navigation";
+import { useNavigate } from "react-router-dom";
+import { getProgress } from "@/lib/storage";
+import { useEffect, useState } from "react";
 
 interface Lesson {
   id: number;
@@ -70,6 +73,13 @@ const lessons: Lesson[] = [
 ];
 
 const Lessons = () => {
+  const navigate = useNavigate();
+  const [progress, setProgress] = useState(getProgress());
+
+  useEffect(() => {
+    setProgress(getProgress());
+  }, []);
+
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
@@ -95,20 +105,21 @@ const Lessons = () => {
                   ? "opacity-60"
                   : "hover:shadow-card-hover cursor-pointer"
               }`}
+              onClick={() => !lesson.locked && navigate(`/lessons/${lesson.id}`)}
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 space-y-3">
                   <div className="flex items-start gap-3">
                     <div
                       className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                        lesson.completed
+                        progress.lessonsCompleted.includes(lesson.id)
                           ? "bg-primary text-primary-foreground"
                           : lesson.locked
                           ? "bg-muted text-muted-foreground"
                           : "bg-accent text-accent-foreground"
                       }`}
                     >
-                      {lesson.completed ? (
+                      {progress.lessonsCompleted.includes(lesson.id) ? (
                         <CheckCircle className="w-6 h-6" />
                       ) : lesson.locked ? (
                         <Lock className="w-6 h-6" />
@@ -128,7 +139,7 @@ const Lessons = () => {
                         <Badge variant="outline" className="bg-warning/10 text-warning border-warning/20">
                           +{lesson.xp} XP
                         </Badge>
-                        {lesson.completed && (
+                        {progress.lessonsCompleted.includes(lesson.id) && (
                           <Badge className="bg-primary/10 text-primary border-primary/20">
                             Completed
                           </Badge>
@@ -136,10 +147,10 @@ const Lessons = () => {
                       </div>
                     </div>
                   </div>
-                  {!lesson.completed && !lesson.locked && lesson.progress > 0 && (
+                  {!progress.lessonsCompleted.includes(lesson.id) && !lesson.locked && progress.lessonProgress[lesson.id] > 0 && (
                     <ProgressBar
                       label="Progress"
-                      current={lesson.progress}
+                      current={progress.lessonProgress[lesson.id]}
                       max={100}
                       color="primary"
                     />
@@ -148,13 +159,14 @@ const Lessons = () => {
                 <div>
                   <Button
                     disabled={lesson.locked}
-                    variant={lesson.completed ? "outline" : "default"}
+                    variant={progress.lessonsCompleted.includes(lesson.id) ? "outline" : "default"}
+                    onClick={() => navigate(`/lessons/${lesson.id}`)}
                   >
-                    {lesson.completed
+                    {progress.lessonsCompleted.includes(lesson.id)
                       ? "Review"
                       : lesson.locked
                       ? "Locked"
-                      : lesson.progress > 0
+                      : progress.lessonProgress[lesson.id] > 0
                       ? "Continue"
                       : "Start"}
                   </Button>
