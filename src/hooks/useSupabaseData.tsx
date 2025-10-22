@@ -39,6 +39,14 @@ export interface DailyChallengeCompletion {
   xp_earned: number;
 }
 
+export interface LearnedSign {
+  id: string;
+  user_id: string;
+  sign_id: string;
+  learned_from: string;
+  learned_at: string;
+}
+
 export function useUserProgress() {
   const { user } = useAuth();
   const [progress, setProgress] = useState<UserProgress | null>(null);
@@ -220,4 +228,85 @@ export function useRoadSigns() {
   };
 
   return { signs, loading, refreshSigns: fetchSigns };
+}
+
+export function useLearnedSigns() {
+  const { user } = useAuth();
+  const [learnedSigns, setLearnedSigns] = useState<LearnedSign[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
+    fetchLearnedSigns();
+  }, [user]);
+
+  const fetchLearnedSigns = async () => {
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from('user_learned_signs')
+      .select('*')
+      .eq('user_id', user.id);
+
+    if (error) {
+      console.error('Error fetching learned signs:', error);
+    } else {
+      setLearnedSigns(data || []);
+    }
+    setLoading(false);
+  };
+
+  const markSignAsLearned = async (signId: string, learnedFrom: string) => {
+    if (!user) return;
+
+    const { error } = await supabase
+      .from('user_learned_signs')
+      .upsert({
+        user_id: user.id,
+        sign_id: signId,
+        learned_from: learnedFrom
+      }, {
+        onConflict: 'user_id,sign_id'
+      });
+
+    if (error) {
+      console.error('Error marking sign as learned:', error);
+    } else {
+      fetchLearnedSigns();
+    }
+  };
+
+  const markMultipleSignsAsLearned = async (signIds: string[], learnedFrom: string) => {
+    if (!user) return;
+
+    const signRecords = signIds.map(signId => ({
+      user_id: user.id,
+      sign_id: signId,
+      learned_from: learnedFrom
+    }));
+
+    const { error } = await supabase
+      .from('user_learned_signs')
+      .upsert(signRecords, {
+        onConflict: 'user_id,sign_id'
+      });
+
+    if (error) {
+      console.error('Error marking signs as learned:', error);
+    } else {
+      fetchLearnedSigns();
+    }
+  };
+
+  return { 
+    learnedSigns, 
+    loading, 
+    markSignAsLearned, 
+    markMultipleSignsAsLearned,
+    refreshLearnedSigns: fetchLearnedSigns 
+  };
 }

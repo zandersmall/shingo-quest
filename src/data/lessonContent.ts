@@ -16,6 +16,7 @@ export interface LessonData {
   description: string;
   xp: number;
   slides: LessonSlide[];
+  signIds: string[]; // IDs of signs taught in this lesson
 }
 
 export const lessons: LessonData[] = [
@@ -24,6 +25,7 @@ export const lessons: LessonData[] = [
     title: "Basic Information Signs",
     description: "Learn essential road classification and route markers",
     xp: 100,
+    signIds: ['national-road', 'prefectural-road'], // Signs taught in this lesson
     slides: [
       {
         type: 'intro',
@@ -71,6 +73,7 @@ export const lessons: LessonData[] = [
     title: "Prohibition Signs",
     description: "Master signs that restrict specific actions",
     xp: 150,
+    signIds: ['no-parking', 'no-stopping', 'no-u-turn', 'no-entry'], // Signs taught in this lesson
     slides: [
       {
         type: 'intro',
@@ -130,6 +133,7 @@ export const lessons: LessonData[] = [
     title: "Warning Signs",
     description: "Recognize hazard alerts and caution indicators",
     xp: 200,
+    signIds: ['scooters'], // Signs taught in this lesson
     slides: [
       {
         type: 'intro',

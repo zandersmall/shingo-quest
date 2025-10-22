@@ -22,7 +22,7 @@ import SignCard from "@/components/SignCard";
 import Navigation from "@/components/Navigation";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { useUserProgress, useRoadSigns, useLessonProgress } from "@/hooks/useSupabaseData";
+import { useUserProgress, useRoadSigns, useLessonProgress, useLearnedSigns } from "@/hooks/useSupabaseData";
 import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
@@ -31,6 +31,7 @@ const Index = () => {
   const { progress, loading: progressLoading, refreshProgress } = useUserProgress();
   const { signs, loading: signsLoading } = useRoadSigns();
   const { lessons: lessonProgressData } = useLessonProgress();
+  const { learnedSigns } = useLearnedSigns();
   const [achievements, setAchievements] = useState<any[]>([]);
 
   useEffect(() => {
@@ -79,14 +80,8 @@ const Index = () => {
     warning: lessonProgressData.filter(l => l.lesson_id === "3").reduce((sum, l) => sum + (l.completed ? 1 : 0), 0),
   };
 
-  // Count signs learned from completed lessons
-  const signsLearned = lessonProgressData.filter(l => l.completed).reduce((sum, l) => {
-    const lessonId = parseInt(l.lesson_id);
-    if (lessonId === 1) return sum + 8;
-    if (lessonId === 2) return sum + 12;
-    if (lessonId === 3) return sum + 15;
-    return sum;
-  }, 0);
+  // Use actual learned signs count
+  const signsLearned = learnedSigns.length;
 
   return (
     <div className="min-h-screen bg-background">

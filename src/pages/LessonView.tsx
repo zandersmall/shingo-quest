@@ -8,7 +8,7 @@ import { getLessonById, LessonSlide } from "@/data/lessonContent";
 import { useToast } from "@/hooks/use-toast";
 import Navigation from "@/components/Navigation";
 import { useAuth } from "@/hooks/useAuth";
-import { useLessonProgress, useUserProgress } from "@/hooks/useSupabaseData";
+import { useLessonProgress, useUserProgress, useLearnedSigns } from "@/hooks/useSupabaseData";
 import { supabase } from "@/integrations/supabase/client";
 
 const LessonView = () => {
@@ -18,6 +18,7 @@ const LessonView = () => {
   const { user, loading: authLoading } = useAuth();
   const { updateLesson } = useLessonProgress();
   const { progress, updateProgress } = useUserProgress();
+  const { markMultipleSignsAsLearned } = useLearnedSigns();
   const lesson = getLessonById(Number(id));
   
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -72,13 +73,19 @@ const LessonView = () => {
       setShowFeedback(false);
     } else {
       // Complete lesson in Supabase
-      if (user && progress) {
+      if (user && progress && lesson) {
+        // Mark lesson as complete
         await updateLesson(lesson.id.toString(), {
           lesson_id: lesson.id.toString(),
           completed: true,
           progress: 100,
           xp_earned: lesson.xp
         });
+        
+        // Mark all signs in this lesson as learned
+        if (lesson.signIds && lesson.signIds.length > 0) {
+          await markMultipleSignsAsLearned(lesson.signIds, 'lesson');
+        }
         
         // Calculate streak
         const today = new Date().toISOString().split('T')[0];

@@ -291,6 +291,41 @@ export type Database = {
         }
         Relationships: []
       }
+      user_learned_signs: {
+        Row: {
+          created_at: string
+          id: string
+          learned_at: string
+          learned_from: string
+          sign_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          learned_at?: string
+          learned_from: string
+          sign_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          learned_at?: string
+          learned_from?: string
+          sign_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_learned_signs_sign_id_fkey"
+            columns: ["sign_id"]
+            isOneToOne: false
+            referencedRelation: "road_signs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_progress: {
         Row: {
           created_at: string | null
