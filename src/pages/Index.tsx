@@ -19,15 +19,19 @@ import { Card } from "@/components/ui/card";
 import heroImage from "@/assets/hero-signs.jpg";
 import SignCard from "@/components/SignCard";
 import { roadSigns } from "@/data/roadSigns";
+import Navigation from "@/components/Navigation";
+import { useNavigate } from "react-router-dom";
 
 const Index = () => {
   const [xp] = useState(1250);
   const [streak] = useState(7);
   const [level] = useState(5);
   const [signsLearned] = useState(42);
+  const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-background">
+      <Navigation />
       {/* Hero Section */}
       <header className="relative overflow-hidden bg-gradient-primary text-primary-foreground py-12 px-4">
         <div 
@@ -85,7 +89,7 @@ const Index = () => {
               description="Progressive courses from basics to advanced"
               buttonText="Continue"
               color="primary"
-              onClick={() => console.log("Lessons clicked")}
+              onClick={() => navigate("/lessons")}
             />
             <ActionCard
               icon={BrainCircuit}
@@ -93,7 +97,7 @@ const Index = () => {
               description="Test your knowledge and earn bonus XP"
               buttonText="Start Quiz"
               color="accent"
-              onClick={() => console.log("Quizzes clicked")}
+              onClick={() => navigate("/quizzes")}
             />
             <ActionCard
               icon={CreditCard}
@@ -101,7 +105,7 @@ const Index = () => {
               description="Spaced repetition for better retention"
               buttonText="Review"
               color="warning"
-              onClick={() => console.log("Flashcards clicked")}
+              onClick={() => navigate("/flashcards")}
             />
             <ActionCard
               icon={Calendar}
@@ -109,7 +113,7 @@ const Index = () => {
               description="Complete today's challenge for streak bonus"
               buttonText="Challenge"
               color="secondary"
-              onClick={() => console.log("Daily Challenge clicked")}
+              onClick={() => navigate("/daily-challenge")}
             />
           </div>
         </section>
