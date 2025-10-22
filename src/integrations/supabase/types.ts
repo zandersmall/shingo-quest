@@ -261,6 +261,36 @@ export type Database = {
           },
         ]
       }
+      road_signs: {
+        Row: {
+          category: string
+          created_at: string | null
+          description: string | null
+          id: string
+          image_url: string
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          description?: string | null
+          id: string
+          image_url: string
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       user_progress: {
         Row: {
           created_at: string | null
