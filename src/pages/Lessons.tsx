@@ -5,8 +5,9 @@ import { Badge } from "@/components/ui/badge";
 import ProgressBar from "@/components/ProgressBar";
 import Navigation from "@/components/Navigation";
 import { useNavigate } from "react-router-dom";
-import { getProgress } from "@/lib/storage";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { useLessonProgress } from "@/hooks/useSupabaseData";
 
 interface Lesson {
   id: number;
@@ -14,9 +15,7 @@ interface Lesson {
   description: string;
   signsCount: number;
   xp: number;
-  completed: boolean;
   locked: boolean;
-  progress: number;
 }
 
 const lessons: Lesson[] = [
@@ -26,9 +25,7 @@ const lessons: Lesson[] = [
     description: "Learn essential road classification and route markers",
     signsCount: 8,
     xp: 100,
-    completed: true,
     locked: false,
-    progress: 100,
   },
   {
     id: 2,
@@ -36,9 +33,7 @@ const lessons: Lesson[] = [
     description: "Master signs that restrict specific actions",
     signsCount: 12,
     xp: 150,
-    completed: false,
     locked: false,
-    progress: 60,
   },
   {
     id: 3,
@@ -46,9 +41,7 @@ const lessons: Lesson[] = [
     description: "Recognize hazard alerts and caution indicators",
     signsCount: 15,
     xp: 200,
-    completed: false,
     locked: false,
-    progress: 0,
   },
   {
     id: 4,
@@ -56,9 +49,7 @@ const lessons: Lesson[] = [
     description: "Understand mandatory actions and directions",
     signsCount: 10,
     xp: 150,
-    completed: false,
     locked: true,
-    progress: 0,
   },
   {
     id: 5,
@@ -66,19 +57,28 @@ const lessons: Lesson[] = [
     description: "Complex intersections and special conditions",
     signsCount: 20,
     xp: 300,
-    completed: false,
     locked: true,
-    progress: 0,
   },
 ];
 
 const Lessons = () => {
   const navigate = useNavigate();
-  const [progress, setProgress] = useState(getProgress());
+  const { user } = useAuth();
+  const { lessons: lessonProgressData } = useLessonProgress();
 
   useEffect(() => {
-    setProgress(getProgress());
-  }, []);
+    if (!user) {
+      navigate('/auth');
+    }
+  }, [user, navigate]);
+
+  const getLessonData = (lessonId: number) => {
+    const lessonProgress = lessonProgressData.find(l => l.lesson_id === lessonId.toString());
+    return {
+      completed: lessonProgress?.completed || false,
+      progress: lessonProgress?.progress || 0
+    };
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -96,84 +96,96 @@ const Lessons = () => {
       </header>
 
       <main className="max-w-6xl mx-auto px-4 py-8">
-        <div className="space-y-4">
-          {lessons.map((lesson) => (
-            <Card
-              key={lesson.id}
-              className={`p-6 transition-all ${
-                lesson.locked
-                  ? "opacity-60"
-                  : "hover:shadow-card-hover cursor-pointer"
-              }`}
-              onClick={() => !lesson.locked && navigate(`/lessons/${lesson.id}`)}
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1 space-y-3">
-                  <div className="flex items-start gap-3">
-                    <div
-                      className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                        progress.lessonsCompleted.includes(lesson.id)
-                          ? "bg-primary text-primary-foreground"
-                          : lesson.locked
-                          ? "bg-muted text-muted-foreground"
-                          : "bg-accent text-accent-foreground"
-                      }`}
-                    >
-                      {progress.lessonsCompleted.includes(lesson.id) ? (
-                        <CheckCircle className="w-6 h-6" />
-                      ) : lesson.locked ? (
-                        <Lock className="w-6 h-6" />
-                      ) : (
-                        <Play className="w-6 h-6" />
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-xl font-bold mb-1">{lesson.title}</h3>
-                      <p className="text-muted-foreground mb-3">
-                        {lesson.description}
-                      </p>
-                      <div className="flex items-center gap-4 flex-wrap">
-                        <Badge variant="outline">
-                          {lesson.signsCount} signs
-                        </Badge>
-                        <Badge variant="outline" className="bg-warning/10 text-warning border-warning/20">
-                          +{lesson.xp} XP
-                        </Badge>
-                        {progress.lessonsCompleted.includes(lesson.id) && (
-                          <Badge className="bg-primary/10 text-primary border-primary/20">
-                            Completed
-                          </Badge>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {lessons.map((lesson) => {
+            const data = getLessonData(lesson.id);
+            return (
+              <Card
+                key={lesson.id}
+                className="group hover:shadow-lg transition-shadow duration-300"
+              >
+                <div className="p-6">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`p-3 rounded-xl ${
+                          data.completed
+                            ? "bg-primary/10"
+                            : lesson.locked
+                            ? "bg-muted"
+                            : "bg-accent/10"
+                        }`}
+                      >
+                        {data.completed ? (
+                          <CheckCircle className="w-6 h-6 text-primary" />
+                        ) : lesson.locked ? (
+                          <Lock className="w-6 h-6 text-muted-foreground" />
+                        ) : (
+                          <BookOpen className="w-6 h-6 text-accent" />
                         )}
                       </div>
+                      <div>
+                        <h3 className="font-bold text-lg group-hover:text-primary transition-colors">
+                          {lesson.title}
+                        </h3>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge variant="secondary" className="text-xs">
+                            {lesson.signsCount} signs
+                          </Badge>
+                          <Badge variant="outline" className="text-xs">
+                            +{lesson.xp} XP
+                          </Badge>
+                        </div>
+                      </div>
                     </div>
+
+                    {data.completed && (
+                      <CheckCircle className="w-5 h-5 text-primary" />
+                    )}
                   </div>
-                  {!progress.lessonsCompleted.includes(lesson.id) && !lesson.locked && progress.lessonProgress[lesson.id] > 0 && (
-                    <ProgressBar
-                      label="Progress"
-                      current={progress.lessonProgress[lesson.id]}
-                      max={100}
-                      color="primary"
-                    />
+
+                  <p className="text-muted-foreground mb-4">{lesson.description}</p>
+
+                  {!data.completed && data.progress > 0 && (
+                    <div className="mb-4">
+                      <ProgressBar
+                        label=""
+                        current={data.progress}
+                        max={100}
+                        color="primary"
+                      />
+                    </div>
                   )}
-                </div>
-                <div>
+
                   <Button
+                    className="w-full"
                     disabled={lesson.locked}
-                    variant={progress.lessonsCompleted.includes(lesson.id) ? "outline" : "default"}
                     onClick={() => navigate(`/lessons/${lesson.id}`)}
+                    variant={data.completed ? "outline" : "default"}
                   >
-                    {progress.lessonsCompleted.includes(lesson.id)
-                      ? "Review"
-                      : lesson.locked
-                      ? "Locked"
-                      : progress.lessonProgress[lesson.id] > 0
-                      ? "Continue"
-                      : "Start"}
+                    {lesson.locked ? (
+                      <>
+                        <Lock className="w-4 h-4 mr-2" />
+                        Locked
+                      </>
+                    ) : data.completed ? (
+                      "Review Lesson"
+                    ) : data.progress > 0 ? (
+                      <>
+                        <Play className="w-4 h-4 mr-2" />
+                        Continue
+                      </>
+                    ) : (
+                      <>
+                        <Play className="w-4 h-4 mr-2" />
+                        Start Lesson
+                      </>
+                    )}
                   </Button>
                 </div>
-              </div>
-            </Card>
-          ))}
+              </Card>
+            );
+          })}
         </div>
       </main>
     </div>

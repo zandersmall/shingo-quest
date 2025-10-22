@@ -5,14 +5,19 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { getLessonById, LessonSlide } from "@/data/lessonContent";
-import { completeLesson, updateLessonProgress } from "@/lib/storage";
 import { useToast } from "@/hooks/use-toast";
 import Navigation from "@/components/Navigation";
+import { useAuth } from "@/hooks/useAuth";
+import { useLessonProgress, useUserProgress } from "@/hooks/useSupabaseData";
+import { supabase } from "@/integrations/supabase/client";
 
 const LessonView = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const { updateLesson } = useLessonProgress();
+  const { progress, updateProgress } = useUserProgress();
   const lesson = getLessonById(Number(id));
   
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -20,11 +25,17 @@ const LessonView = () => {
   const [showFeedback, setShowFeedback] = useState(false);
 
   useEffect(() => {
-    if (lesson) {
-      const progress = (currentSlide / lesson.slides.length) * 100;
-      updateLessonProgress(lesson.id, Math.round(progress));
+    if (!user) {
+      navigate('/auth');
     }
-  }, [currentSlide, lesson]);
+  }, [user, navigate]);
+
+  useEffect(() => {
+    if (lesson && user) {
+      const slideProgress = Math.round((currentSlide / lesson.slides.length) * 100);
+      updateLesson(lesson.id.toString(), { progress: slideProgress });
+    }
+  }, [currentSlide, lesson, user]);
 
   if (!lesson) {
     return (
@@ -39,9 +50,9 @@ const LessonView = () => {
   }
 
   const slide = lesson.slides[currentSlide];
-  const progress = ((currentSlide + 1) / lesson.slides.length) * 100;
+  const slideProgress = ((currentSlide + 1) / lesson.slides.length) * 100;
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (slide.type === 'quiz' && selectedAnswer === null) {
       toast({
         title: "Please select an answer",
@@ -60,7 +71,22 @@ const LessonView = () => {
       setSelectedAnswer(null);
       setShowFeedback(false);
     } else {
-      completeLesson(lesson.id, lesson.xp);
+      // Complete lesson in Supabase
+      if (user && progress) {
+        await updateLesson(lesson.id.toString(), {
+          lesson_id: lesson.id.toString(),
+          completed: true,
+          progress: 100,
+          xp_earned: lesson.xp
+        });
+        
+        // Update user XP
+        await updateProgress({
+          total_xp: progress.total_xp + lesson.xp,
+          level: Math.floor((progress.total_xp + lesson.xp) / 1000) + 1
+        });
+      }
+      
       toast({
         title: "Lesson Complete! 🎉",
         description: `You earned ${lesson.xp} XP!`
@@ -190,7 +216,7 @@ const LessonView = () => {
             Back to Lessons
           </Button>
           <h1 className="text-3xl font-bold mb-2">{lesson.title}</h1>
-          <Progress value={progress} className="h-2" />
+          <Progress value={slideProgress} className="h-2" />
           <p className="text-sm text-muted-foreground mt-2">
             Slide {currentSlide + 1} of {lesson.slides.length}
           </p>

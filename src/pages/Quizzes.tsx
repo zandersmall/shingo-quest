@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Navigation from "@/components/Navigation";
 import { useNavigate } from "react-router-dom";
-import { getProgress } from "@/lib/storage";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { useQuizScores } from "@/hooks/useSupabaseData";
 
 interface Quiz {
   id: number;
@@ -83,11 +84,19 @@ const difficultyColors = {
 
 const Quizzes = () => {
   const navigate = useNavigate();
-  const [progress, setProgress] = useState(getProgress());
+  const { user } = useAuth();
+  const { scores } = useQuizScores();
 
   useEffect(() => {
-    setProgress(getProgress());
-  }, []);
+    if (!user) {
+      navigate('/auth');
+    }
+  }, [user, navigate]);
+
+  const getBestScore = (quizId: number) => {
+    const quizScores = scores.filter(s => s.quiz_id === quizId.toString());
+    return quizScores.length > 0 ? Math.max(...quizScores.map(s => s.percentage)) : null;
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -140,11 +149,11 @@ const Quizzes = () => {
                 </div>
               </div>
 
-              {progress.quizScores[quiz.id] && (
+              {getBestScore(quiz.id) !== null && (
                 <div className="flex items-center gap-2 p-3 bg-primary/5 rounded-lg">
                   <Trophy className="w-5 h-5 text-primary" />
                   <span className="text-sm font-medium">
-                    Best Score: {progress.quizScores[quiz.id]}%
+                    Best Score: {getBestScore(quiz.id)}%
                   </span>
                   <Star className="w-4 h-4 text-warning ml-auto" />
                 </div>
@@ -152,7 +161,7 @@ const Quizzes = () => {
 
               <div className="pt-2">
                 <Button className="w-full" onClick={() => navigate(`/quizzes/${quiz.id}`)}>
-                  {progress.quizScores[quiz.id] ? "Retake Quiz" : "Start Quiz"}
+                  {getBestScore(quiz.id) !== null ? "Retake Quiz" : "Start Quiz"}
                 </Button>
                 {quiz.bonusXp > 0 && (
                   <p className="text-xs text-center text-muted-foreground mt-2">

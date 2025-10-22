@@ -63,9 +63,9 @@ const Index = () => {
         <div className="relative max-w-6xl mx-auto text-white">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-4xl font-bold mb-2">Taiwan Road Signs</h1>
+              <h1 className="text-4xl font-bold mb-2">Shingō Quest</h1>
               <p className="text-white/90 text-lg">
-                Master Road Signs & Ace Your Test
+                Master Japanese Road Signs
               </p>
             </div>
             <div className="flex items-center gap-3">

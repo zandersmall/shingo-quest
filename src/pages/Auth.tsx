@@ -104,9 +104,9 @@ export default function Auth() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-background to-secondary/10 p-4">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle className="text-2xl text-center">Taiwan Road Signs</CardTitle>
+          <CardTitle className="text-2xl text-center">Shingō Quest</CardTitle>
           <CardDescription className="text-center">
-            Learn road signs and ace your driving test
+            Master Japanese road signs and ace your driving test
           </CardDescription>
         </CardHeader>
         <CardContent>

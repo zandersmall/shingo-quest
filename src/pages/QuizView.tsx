@@ -5,20 +5,30 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { getQuizById } from "@/data/quizQuestions";
-import { saveQuizScore } from "@/lib/storage";
 import { useToast } from "@/hooks/use-toast";
 import Navigation from "@/components/Navigation";
+import { useAuth } from "@/hooks/useAuth";
+import { useQuizScores, useUserProgress } from "@/hooks/useSupabaseData";
 
 const QuizView = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const { saveScore } = useQuizScores();
+  const { progress, updateProgress } = useUserProgress();
   const quiz = getQuizById(Number(id));
   
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<number[]>([]);
   const [showResults, setShowResults] = useState(false);
   const [timeLeft, setTimeLeft] = useState(quiz?.timeLimit || 0);
+
+  useEffect(() => {
+    if (!user) {
+      navigate('/auth');
+    }
+  }, [user, navigate]);
 
   useEffect(() => {
     if (!showResults && timeLeft > 0) {
@@ -65,7 +75,9 @@ const QuizView = () => {
     }
   };
 
-  const handleFinish = () => {
+  const handleFinish = async () => {
+    if (!quiz || !user || !progress) return;
+    
     const correctCount = quiz.questions.filter(
       (q, idx) => selectedAnswers[idx] === q.correctAnswer
     ).length;
@@ -73,8 +85,17 @@ const QuizView = () => {
     const score = Math.round((correctCount / quiz.questions.length) * 100);
     const isPerfect = score === 100;
     const xpEarned = isPerfect ? quiz.xpReward + quiz.bonusXp : quiz.xpReward;
+    const timeTaken = (quiz.timeLimit - timeLeft);
     
-    saveQuizScore(quiz.id, score, xpEarned);
+    // Save to Supabase
+    await saveScore(quiz.id.toString(), correctCount, quiz.questions.length, timeTaken, xpEarned);
+    
+    // Update user XP
+    await updateProgress({
+      total_xp: progress.total_xp + xpEarned,
+      level: Math.floor((progress.total_xp + xpEarned) / 1000) + 1
+    });
+    
     setShowResults(true);
     
     toast({
@@ -167,7 +188,7 @@ const QuizView = () => {
   }
 
   const question = quiz.questions[currentQuestion];
-  const progress = ((currentQuestion + 1) / quiz.questions.length) * 100;
+  const quizProgress = ((currentQuestion + 1) / quiz.questions.length) * 100;
 
   return (
     <div className="min-h-screen bg-background">
@@ -193,7 +214,7 @@ const QuizView = () => {
             </div>
           </div>
           
-          <Progress value={progress} className="h-2" />
+          <Progress value={quizProgress} className="h-2" />
           <p className="text-sm text-muted-foreground mt-2">
             Question {currentQuestion + 1} of {quiz.questions.length}
           </p>

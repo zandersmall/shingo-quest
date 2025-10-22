@@ -4,25 +4,41 @@ import { ArrowLeft, Clock, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { roadSigns } from "@/data/roadSigns";
-import { completeDailyChallenge, incrementStreak } from "@/lib/storage";
 import { useToast } from "@/hooks/use-toast";
 import Navigation from "@/components/Navigation";
+import { useAuth } from "@/hooks/useAuth";
+import { useRoadSigns, useUserProgress } from "@/hooks/useSupabaseData";
+import { supabase } from "@/integrations/supabase/client";
 
 const DailyChallengePlay = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const { signs, loading: signsLoading } = useRoadSigns();
+  const { progress, updateProgress } = useUserProgress();
   
-  // Today's challenge: Identify 10 random signs correctly
-  const [challengeSigns] = useState(() => 
-    [...roadSigns].sort(() => Math.random() - 0.5).slice(0, 10)
-  );
+  const [challengeSigns, setChallengeSigns] = useState<any[]>([]);
+  const [allOptions, setAllOptions] = useState<any[]>([]);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
   const [correctCount, setCorrectCount] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(120); // 2 minutes
+  const [timeLeft, setTimeLeft] = useState(120);
   const [showResults, setShowResults] = useState(false);
+
+  useEffect(() => {
+    if (!user) {
+      navigate('/auth');
+    }
+  }, [user, navigate]);
+
+  useEffect(() => {
+    if (signs.length > 0 && challengeSigns.length === 0) {
+      const shuffled = [...signs].sort(() => Math.random() - 0.5).slice(0, 10);
+      setChallengeSigns(shuffled);
+      setAllOptions(signs);
+    }
+  }, [signs, challengeSigns.length]);
 
   useEffect(() => {
     if (!showResults && timeLeft > 0) {
@@ -39,12 +55,20 @@ const DailyChallengePlay = () => {
     }
   }, [showResults, timeLeft]);
 
+  if (signsLoading || challengeSigns.length === 0) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p>Loading challenge...</p>
+      </div>
+    );
+  }
+
   const currentSign = challengeSigns[currentQuestion];
   
   // Generate wrong options
   const options = [
     currentSign.name,
-    ...roadSigns
+    ...allOptions
       .filter(s => s.id !== currentSign.id)
       .sort(() => Math.random() - 0.5)
       .slice(0, 3)
@@ -72,11 +96,30 @@ const DailyChallengePlay = () => {
     }
   };
 
-  const handleFinish = () => {
-    const today = new Date().toISOString().split('T')[0];
-    const xpEarned = correctCount >= 8 ? 150 : 100; // Bonus for 80%+
+  const handleFinish = async () => {
+    if (!user || !progress) return;
     
-    completeDailyChallenge(today, xpEarned);
+    const today = new Date().toISOString().split('T')[0];
+    const xpEarned = correctCount >= 8 ? 150 : 100;
+    
+    // Save to Supabase
+    await supabase.from('daily_challenge_completions').insert({
+      user_id: user.id,
+      challenge_date: today,
+      score: correctCount,
+      xp_earned: xpEarned
+    });
+    
+    // Update streak and XP
+    const newStreak = progress.current_streak + 1;
+    await updateProgress({
+      total_xp: progress.total_xp + xpEarned,
+      level: Math.floor((progress.total_xp + xpEarned) / 1000) + 1,
+      current_streak: newStreak,
+      longest_streak: Math.max(newStreak, progress.longest_streak),
+      last_activity_date: today
+    });
+    
     setShowResults(true);
     
     toast({
@@ -132,7 +175,7 @@ const DailyChallengePlay = () => {
     );
   }
 
-  const progress = ((currentQuestion + 1) / challengeSigns.length) * 100;
+  const challengeProgress = ((currentQuestion + 1) / challengeSigns.length) * 100;
 
   return (
     <div className="min-h-screen bg-background">
@@ -157,7 +200,7 @@ const DailyChallengePlay = () => {
             </div>
           </div>
           
-          <Progress value={progress} className="h-2" />
+          <Progress value={challengeProgress} className="h-2" />
           <p className="text-sm text-muted-foreground mt-2">
             Question {currentQuestion + 1} of {challengeSigns.length}
           </p>
@@ -167,7 +210,7 @@ const DailyChallengePlay = () => {
           <div className="space-y-6">
             <div className="bg-muted/30 rounded-lg p-6 flex items-center justify-center">
               <img
-                src={currentSign.imagePath}
+                src={currentSign.image_url}
                 alt="Challenge"
                 className="max-w-xs max-h-48 object-contain"
               />
