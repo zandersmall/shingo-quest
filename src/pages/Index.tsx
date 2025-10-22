@@ -17,6 +17,8 @@ import ProgressBar from "@/components/ProgressBar";
 import AchievementBadge from "@/components/AchievementBadge";
 import { Card } from "@/components/ui/card";
 import heroImage from "@/assets/hero-signs.jpg";
+import SignCard from "@/components/SignCard";
+import { roadSigns } from "@/data/roadSigns";
 
 const Index = () => {
   const [xp] = useState(1250);
@@ -165,6 +167,20 @@ const Index = () => {
               description="Reach level 10"
               unlocked={false}
             />
+          </div>
+        </section>
+
+        {/* Sign Library */}
+        <section>
+          <h2 className="text-2xl font-bold mb-4">Sign Library</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {roadSigns.map((sign) => (
+              <SignCard 
+                key={sign.id} 
+                sign={sign}
+                onClick={() => console.log('Sign clicked:', sign.name)}
+              />
+            ))}
           </div>
         </section>
       </main>
