@@ -1,4 +1,4 @@
-import { Home, BookOpen, BrainCircuit, CreditCard, Calendar } from "lucide-react";
+import { Home, BookOpen, BrainCircuit, CreditCard } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
@@ -7,7 +7,6 @@ const navItems = [
   { to: "/lessons", icon: BookOpen, label: "Lessons" },
   { to: "/quizzes", icon: BrainCircuit, label: "Quizzes" },
   { to: "/flashcards", icon: CreditCard, label: "Flashcards" },
-  { to: "/daily-challenge", icon: Calendar, label: "Daily Challenge" },
 ];
 
 const Navigation = () => {

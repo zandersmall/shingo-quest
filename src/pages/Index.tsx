@@ -6,7 +6,6 @@ import {
   BookOpen,
   BrainCircuit,
   CreditCard,
-  Calendar,
   Award,
   Star,
   Zap,
@@ -23,13 +22,16 @@ import SignCard from "@/components/SignCard";
 import Navigation from "@/components/Navigation";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { useUserProgress, useRoadSigns } from "@/hooks/useSupabaseData";
+import { useUserProgress, useRoadSigns, useLessonProgress } from "@/hooks/useSupabaseData";
+import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading, signOut } = useAuth();
   const { progress, loading: progressLoading, refreshProgress } = useUserProgress();
   const { signs, loading: signsLoading } = useRoadSigns();
+  const { lessons: lessonProgressData } = useLessonProgress();
+  const [achievements, setAchievements] = useState<any[]>([]);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -40,8 +42,20 @@ const Index = () => {
   useEffect(() => {
     if (user) {
       refreshProgress();
+      fetchAchievements();
     }
   }, [user]);
+
+  const fetchAchievements = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from('achievements')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('earned_at', { ascending: false })
+      .limit(4);
+    setAchievements(data || []);
+  };
 
   if (authLoading || progressLoading) {
     return (
@@ -56,6 +70,22 @@ const Index = () => {
   }
 
   const { total_xp = 0, level = 1, current_streak = 0 } = progress || {};
+
+  // Calculate category progress from lesson data
+  const categoryProgress = {
+    information: lessonProgressData.filter(l => l.lesson_id === "1").reduce((sum, l) => sum + (l.completed ? 1 : 0), 0),
+    prohibition: lessonProgressData.filter(l => l.lesson_id === "2").reduce((sum, l) => sum + (l.completed ? 1 : 0), 0),
+    warning: lessonProgressData.filter(l => l.lesson_id === "3").reduce((sum, l) => sum + (l.completed ? 1 : 0), 0),
+  };
+
+  // Count signs learned from completed lessons
+  const signsLearned = lessonProgressData.filter(l => l.completed).reduce((sum, l) => {
+    const lessonId = parseInt(l.lesson_id);
+    if (lessonId === 1) return sum + 8;
+    if (lessonId === 2) return sum + 12;
+    if (lessonId === 3) return sum + 15;
+    return sum;
+  }, 0);
 
   return (
     <div className="min-h-screen bg-background">
@@ -112,7 +142,7 @@ const Index = () => {
         {/* Stats Grid */}
         <section className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <StatCard icon={Trophy} label="Total XP" value={total_xp} color="primary" />
-          <StatCard icon={Target} label="Signs Available" value={signs.length} color="accent" />
+          <StatCard icon={Target} label="Signs Learned" value={signsLearned} color="accent" />
           <StatCard icon={Zap} label="Current Level" value={level} color="warning" />
           <StatCard icon={Flame} label="Current Streak" value={`${current_streak} days`} color="secondary" />
         </section>
@@ -120,7 +150,7 @@ const Index = () => {
         {/* Action Cards */}
         <section>
           <h2 className="text-2xl font-bold mb-4">Start Learning</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <ActionCard
               icon={BookOpen}
               title="Lessons"
@@ -145,14 +175,6 @@ const Index = () => {
               color="warning"
               onClick={() => navigate("/flashcards")}
             />
-            <ActionCard
-              icon={Calendar}
-              title="Daily Challenge"
-              description="Complete today's challenge for streak bonus"
-              buttonText="Challenge"
-              color="secondary"
-              onClick={() => navigate("/daily-challenge")}
-            />
           </div>
         </section>
 
@@ -161,21 +183,21 @@ const Index = () => {
           <h2 className="text-2xl font-bold mb-4">Your Progress</h2>
           <Card className="p-6 shadow-card space-y-4">
             <ProgressBar
-              label="Information Signs"
-              current={15}
-              max={25}
+              label="Basic Information Signs"
+              current={categoryProgress.information}
+              max={1}
               color="primary"
             />
             <ProgressBar
               label="Prohibition Signs"
-              current={12}
-              max={30}
+              current={categoryProgress.prohibition}
+              max={1}
               color="accent"
             />
             <ProgressBar
               label="Warning Signs"
-              current={15}
-              max={28}
+              current={categoryProgress.warning}
+              max={1}
               color="warning"
             />
           </Card>
@@ -183,31 +205,31 @@ const Index = () => {
 
         {/* Achievements */}
         <section>
-          <h2 className="text-2xl font-bold mb-4">Recent Achievements</h2>
+          <h2 className="text-2xl font-bold mb-4">Your Achievements</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <AchievementBadge
               icon={Flame}
               title="Week Warrior"
               description="7 day streak"
-              unlocked
+              unlocked={current_streak >= 7}
             />
             <AchievementBadge
               icon={Star}
-              title="Perfect Score"
-              description="100% on quiz"
-              unlocked
+              title="First Lesson"
+              description="Complete your first lesson"
+              unlocked={lessonProgressData.some(l => l.completed)}
             />
             <AchievementBadge
               icon={Target}
-              title="Sign Master"
-              description="Learn 50 signs"
-              unlocked={false}
+              title="Sign Learner"
+              description="Learn 20 signs"
+              unlocked={signsLearned >= 20}
             />
             <AchievementBadge
               icon={Trophy}
-              title="Champion"
-              description="Reach level 10"
-              unlocked={false}
+              title="Level Up"
+              description="Reach level 5"
+              unlocked={level >= 5}
             />
           </div>
         </section>

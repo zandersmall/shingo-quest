@@ -11,8 +11,6 @@ import Quizzes from "./pages/Quizzes";
 import QuizView from "./pages/QuizView";
 import Flashcards from "./pages/Flashcards";
 import FlashcardReview from "./pages/FlashcardReview";
-import DailyChallenge from "./pages/DailyChallenge";
-import DailyChallengePlay from "./pages/DailyChallengePlay";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,8 +30,6 @@ const App = () => (
           <Route path="/quizzes/:id" element={<QuizView />} />
           <Route path="/flashcards" element={<Flashcards />} />
           <Route path="/flashcards/review" element={<FlashcardReview />} />
-          <Route path="/daily-challenge" element={<DailyChallenge />} />
-          <Route path="/daily-challenge/play" element={<DailyChallengePlay />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
