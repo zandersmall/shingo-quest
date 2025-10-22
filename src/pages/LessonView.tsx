@@ -10,13 +10,14 @@ import Navigation from "@/components/Navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { useLessonProgress, useUserProgress, useLearnedSigns } from "@/hooks/useSupabaseData";
 import { supabase } from "@/integrations/supabase/client";
+import confetti from "canvas-confetti";
 
 const LessonView = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, loading: authLoading } = useAuth();
-  const { updateLesson } = useLessonProgress();
+  const { updateLesson, lessons: lessonProgressData } = useLessonProgress();
   const { progress, updateProgress } = useUserProgress();
   const { markMultipleSignsAsLearned } = useLearnedSigns();
   const lesson = getLessonById(Number(id));
@@ -24,6 +25,11 @@ const LessonView = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
+
+  // Check if lesson is already completed
+  const isLessonCompleted = lessonProgressData.find(
+    l => l.lesson_id === id && l.completed
+  ) !== undefined;
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -74,51 +80,69 @@ const LessonView = () => {
     } else {
       // Complete lesson in Supabase
       if (user && progress && lesson) {
+        const wasAlreadyCompleted = isLessonCompleted;
+        
         // Mark lesson as complete
         await updateLesson(lesson.id.toString(), {
           lesson_id: lesson.id.toString(),
           completed: true,
           progress: 100,
-          xp_earned: lesson.xp
+          xp_earned: wasAlreadyCompleted ? 0 : lesson.xp
         });
         
-        // Mark all signs in this lesson as learned
-        if (lesson.signIds && lesson.signIds.length > 0) {
-          await markMultipleSignsAsLearned(lesson.signIds, 'lesson');
-        }
-        
-        // Calculate streak
-        const today = new Date().toISOString().split('T')[0];
-        const lastActivityDate = progress.last_activity_date ? new Date(progress.last_activity_date).toISOString().split('T')[0] : null;
-        const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-        
-        let newStreak = progress.current_streak || 0;
-        if (lastActivityDate !== today) {
-          if (lastActivityDate === yesterday) {
-            newStreak += 1;
-          } else if (lastActivityDate === null) {
-            newStreak = 1;
-          } else {
-            newStreak = 1;
+        // Only award XP and mark signs learned if not already completed
+        if (!wasAlreadyCompleted) {
+          // Mark all signs in this lesson as learned
+          if (lesson.signIds && lesson.signIds.length > 0) {
+            await markMultipleSignsAsLearned(lesson.signIds, 'lesson');
           }
+          
+          // Calculate streak
+          const today = new Date().toISOString().split('T')[0];
+          const lastActivityDate = progress.last_activity_date ? new Date(progress.last_activity_date).toISOString().split('T')[0] : null;
+          const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+          
+          let newStreak = progress.current_streak || 0;
+          if (lastActivityDate !== today) {
+            if (lastActivityDate === yesterday) {
+              newStreak += 1;
+            } else if (lastActivityDate === null) {
+              newStreak = 1;
+            } else {
+              newStreak = 1;
+            }
+          }
+          
+          const newLongestStreak = Math.max(newStreak, progress.longest_streak || 0);
+          
+          // Update user XP and streak
+          await updateProgress({
+            total_xp: progress.total_xp + lesson.xp,
+            level: Math.floor((progress.total_xp + lesson.xp) / 1000) + 1,
+            current_streak: newStreak,
+            longest_streak: newLongestStreak,
+            last_activity_date: today
+          });
+
+          // Trigger confetti animation!
+          confetti({
+            particleCount: 100,
+            spread: 70,
+            origin: { y: 0.6 }
+          });
+          
+          toast({
+            title: "Lesson Complete! 🎉",
+            description: `You earned ${lesson.xp} XP!`
+          });
+        } else {
+          toast({
+            title: "Lesson Reviewed! 📚",
+            description: "You've already completed this lesson."
+          });
         }
-        
-        const newLongestStreak = Math.max(newStreak, progress.longest_streak || 0);
-        
-        // Update user XP and streak
-        await updateProgress({
-          total_xp: progress.total_xp + lesson.xp,
-          level: Math.floor((progress.total_xp + lesson.xp) / 1000) + 1,
-          current_streak: newStreak,
-          longest_streak: newLongestStreak,
-          last_activity_date: today
-        });
       }
       
-      toast({
-        title: "Lesson Complete! 🎉",
-        description: `You earned ${lesson.xp} XP!`
-      });
       navigate("/lessons");
     }
   };

@@ -73,7 +73,7 @@ const Lessons = () => {
   }, [user, authLoading, navigate]);
 
   const getLessonData = (lessonId: number) => {
-    const lessonProgress = lessonProgressData.find(l => l.lesson_id === lessonId.toString());
+    const lessonProgress = lessonProgressData.find(l => parseInt(l.lesson_id) === lessonId);
     return {
       completed: lessonProgress?.completed || false,
       progress: lessonProgress?.progress || 0
