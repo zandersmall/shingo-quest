@@ -90,10 +90,31 @@ const QuizView = () => {
     // Save to Supabase
     await saveScore(quiz.id.toString(), correctCount, quiz.questions.length, timeTaken, xpEarned);
     
-    // Update user XP
+    // Calculate streak
+    const today = new Date().toISOString().split('T')[0];
+    const lastActivityDate = progress.last_activity_date ? new Date(progress.last_activity_date).toISOString().split('T')[0] : null;
+    const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+    
+    let newStreak = progress.current_streak || 0;
+    if (lastActivityDate !== today) {
+      if (lastActivityDate === yesterday) {
+        newStreak += 1;
+      } else if (lastActivityDate === null) {
+        newStreak = 1;
+      } else {
+        newStreak = 1;
+      }
+    }
+    
+    const newLongestStreak = Math.max(newStreak, progress.longest_streak || 0);
+    
+    // Update user XP and streak
     await updateProgress({
       total_xp: progress.total_xp + xpEarned,
-      level: Math.floor((progress.total_xp + xpEarned) / 1000) + 1
+      level: Math.floor((progress.total_xp + xpEarned) / 1000) + 1,
+      current_streak: newStreak,
+      longest_streak: newLongestStreak,
+      last_activity_date: today
     });
     
     setShowResults(true);

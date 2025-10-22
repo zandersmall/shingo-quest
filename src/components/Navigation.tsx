@@ -14,7 +14,7 @@ const Navigation = () => {
   const location = useLocation();
 
   return (
-    <nav className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50">
+    <nav className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-40">
       <div className="max-w-6xl mx-auto px-4">
         <div className="flex items-center gap-2 py-3 overflow-x-auto">
           {navItems.map((item) => {

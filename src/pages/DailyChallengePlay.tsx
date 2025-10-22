@@ -110,13 +110,29 @@ const DailyChallengePlay = () => {
       xp_earned: xpEarned
     });
     
+    // Calculate streak
+    const lastActivityDate = progress.last_activity_date ? new Date(progress.last_activity_date).toISOString().split('T')[0] : null;
+    const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+    
+    let newStreak = progress.current_streak || 0;
+    if (lastActivityDate !== today) {
+      if (lastActivityDate === yesterday) {
+        newStreak += 1;
+      } else if (lastActivityDate === null) {
+        newStreak = 1;
+      } else {
+        newStreak = 1;
+      }
+    }
+    
+    const newLongestStreak = Math.max(newStreak, progress.longest_streak || 0);
+    
     // Update streak and XP
-    const newStreak = progress.current_streak + 1;
     await updateProgress({
       total_xp: progress.total_xp + xpEarned,
       level: Math.floor((progress.total_xp + xpEarned) / 1000) + 1,
       current_streak: newStreak,
-      longest_streak: Math.max(newStreak, progress.longest_streak),
+      longest_streak: newLongestStreak,
       last_activity_date: today
     });
     

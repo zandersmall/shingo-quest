@@ -28,7 +28,7 @@ import { useUserProgress, useRoadSigns } from "@/hooks/useSupabaseData";
 const Index = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading, signOut } = useAuth();
-  const { progress, loading: progressLoading } = useUserProgress();
+  const { progress, loading: progressLoading, refreshProgress } = useUserProgress();
   const { signs, loading: signsLoading } = useRoadSigns();
 
   useEffect(() => {
@@ -36,6 +36,12 @@ const Index = () => {
       navigate('/auth');
     }
   }, [user, authLoading, navigate]);
+
+  useEffect(() => {
+    if (user) {
+      refreshProgress();
+    }
+  }, [user]);
 
   if (authLoading || progressLoading) {
     return (
