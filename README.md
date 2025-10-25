@@ -1,1 +1,1 @@
-quest-ja.vercel.app
+https://quest-ja.vercel.app
