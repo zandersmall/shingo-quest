@@ -20,6 +20,8 @@ serve(async (req) => {
       throw new Error('OpenAI API key not configured');
     }
 
+    console.log('Starting chat request with streaming');
+
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -31,11 +33,12 @@ serve(async (req) => {
         messages: [
           { 
             role: 'system', 
-            content: 'You are a helpful Japanese language learning assistant. You ONLY help with Japanese language learning, Japanese culture, Japanese road signs, and related topics. If a user asks about anything unrelated to Japan or Japanese learning, politely redirect them back to Japanese learning topics. Keep responses clear, educational, and encouraging.' 
+            content: 'You are a specialized Japanese learning assistant focused on Japanese language, culture, road signs, and DRIVING IN JAPAN. You help users understand Japanese driving rules, road signs, traffic laws, and driving etiquette. You can also help with general Japanese language and culture. If a user asks about anything unrelated to Japan, Japanese learning, or driving in Japan, politely redirect them. Keep responses clear, practical, and educational. When users provide images of road signs or driving scenarios, analyze them and provide detailed explanations.' 
           },
           ...messages
         ],
-        max_completion_tokens: 1000,
+        max_completion_tokens: 2000,
+        stream: true,
       }),
     });
 
@@ -45,11 +48,16 @@ serve(async (req) => {
       throw new Error(`OpenAI API error: ${response.status}`);
     }
 
-    const data = await response.json();
-    const generatedText = data.choices[0].message.content;
+    console.log('Streaming response received');
 
-    return new Response(JSON.stringify({ message: generatedText }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    // Return the stream directly
+    return new Response(response.body, {
+      headers: { 
+        ...corsHeaders, 
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+      },
     });
   } catch (error) {
     console.error('Error in chat function:', error);

@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
-import { Send, Bot, User } from "lucide-react";
+import { Send, Bot, User, Image as ImageIcon, X } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -10,13 +10,16 @@ import { useToast } from "@/hooks/use-toast";
 interface Message {
   role: "user" | "assistant";
   content: string;
+  image?: string;
 }
 
 const Chat = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   const scrollToBottom = () => {
@@ -27,28 +30,114 @@ const Chat = () => {
     scrollToBottom();
   }, [messages]);
 
-  const sendMessage = async () => {
-    if (!input.trim() || isLoading) return;
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-    const userMessage: Message = { role: "user", content: input };
+    if (!file.type.startsWith("image/")) {
+      toast({
+        title: "Invalid file",
+        description: "Please select an image file",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setSelectedImage(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const sendMessage = async () => {
+    if ((!input.trim() && !selectedImage) || isLoading) return;
+
+    const userMessage: Message = { 
+      role: "user", 
+      content: input || "What do you see in this image?",
+      image: selectedImage || undefined
+    };
+    
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
+    const imageToSend = selectedImage;
+    setSelectedImage(null);
     setIsLoading(true);
 
+    // Create a placeholder for streaming response
+    const assistantMessageIndex = messages.length + 1;
+    setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+
     try {
-      const { data, error } = await supabase.functions.invoke("chat", {
-        body: { messages: [...messages, userMessage] },
+      const messagesToSend = [...messages, userMessage].map(msg => {
+        if (msg.image) {
+          return {
+            role: msg.role,
+            content: [
+              { type: "text", text: msg.content },
+              { type: "image_url", image_url: { url: msg.image } }
+            ]
+          };
+        }
+        return { role: msg.role, content: msg.content };
       });
 
-      if (error) throw error;
+      const response = await fetch(
+        `https://getvlmzpzgiihhslhcvq.supabase.co/functions/v1/chat`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({ messages: messagesToSend }),
+        }
+      );
 
-      const assistantMessage: Message = {
-        role: "assistant",
-        content: data.message,
-      };
-      setMessages((prev) => [...prev, assistantMessage]);
+      if (!response.ok) throw new Error("Failed to get response");
+
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      if (!reader) throw new Error("No reader available");
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            const data = line.slice(6);
+            if (data === "[DONE]") continue;
+
+            try {
+              const parsed = JSON.parse(data);
+              const content = parsed.choices?.[0]?.delta?.content;
+              if (content) {
+                setMessages((prev) => {
+                  const newMessages = [...prev];
+                  newMessages[assistantMessageIndex] = {
+                    ...newMessages[assistantMessageIndex],
+                    content: newMessages[assistantMessageIndex].content + content,
+                  };
+                  return newMessages;
+                });
+              }
+            } catch (e) {
+              // Ignore parse errors for incomplete JSON
+            }
+          }
+        }
+      }
     } catch (error) {
       console.error("Chat error:", error);
+      setMessages((prev) => prev.slice(0, -1));
       toast({
         title: "Error",
         description: "Failed to get response. Please try again.",
@@ -75,7 +164,7 @@ const Chat = () => {
             Japanese Learning Assistant
           </h1>
           <p className="text-muted-foreground">
-            Ask me anything about Japanese language, culture, or road signs!
+            Ask me about Japanese language, culture, road signs, or driving in Japan! You can also upload images.
           </p>
         </div>
 
@@ -85,7 +174,8 @@ const Chat = () => {
               <div className="h-full flex items-center justify-center text-muted-foreground">
                 <div className="text-center">
                   <Bot className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <p>Start a conversation to learn Japanese!</p>
+                  <p>Start a conversation about Japanese or driving in Japan!</p>
+                  <p className="text-sm mt-2">You can also upload images of road signs</p>
                 </div>
               </div>
             )}
@@ -108,6 +198,13 @@ const Chat = () => {
                       : "bg-muted"
                   }`}
                 >
+                  {message.image && (
+                    <img 
+                      src={message.image} 
+                      alt="Uploaded" 
+                      className="max-w-full rounded-lg mb-2 max-h-64 object-contain"
+                    />
+                  )}
                   <p className="whitespace-pre-wrap">{message.content}</p>
                 </div>
                 {message.role === "user" && (
@@ -130,23 +227,59 @@ const Chat = () => {
             <div ref={messagesEndRef} />
           </div>
 
-          <div className="flex gap-2">
-            <Textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Ask about Japanese..."
-              className="min-h-[60px] max-h-[120px]"
-              disabled={isLoading}
-            />
-            <Button
-              onClick={sendMessage}
-              disabled={isLoading || !input.trim()}
-              size="icon"
-              className="h-[60px] w-[60px] flex-shrink-0"
-            >
-              <Send className="w-5 h-5" />
-            </Button>
+          <div className="space-y-2">
+            {selectedImage && (
+              <div className="relative inline-block">
+                <img 
+                  src={selectedImage} 
+                  alt="Selected" 
+                  className="max-h-32 rounded-lg border border-border"
+                />
+                <Button
+                  size="icon"
+                  variant="destructive"
+                  className="absolute -top-2 -right-2 h-6 w-6"
+                  onClick={() => setSelectedImage(null)}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            )}
+            
+            <div className="flex gap-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageSelect}
+                className="hidden"
+              />
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isLoading}
+                className="h-[60px] w-[60px] flex-shrink-0"
+              >
+                <ImageIcon className="w-5 h-5" />
+              </Button>
+              <Textarea
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Ask about Japanese or driving in Japan..."
+                className="min-h-[60px] max-h-[120px]"
+                disabled={isLoading}
+              />
+              <Button
+                onClick={sendMessage}
+                disabled={isLoading || (!input.trim() && !selectedImage)}
+                size="icon"
+                className="h-[60px] w-[60px] flex-shrink-0"
+              >
+                <Send className="w-5 h-5" />
+              </Button>
+            </div>
           </div>
         </Card>
       </main>
