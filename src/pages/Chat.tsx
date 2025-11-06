@@ -83,58 +83,20 @@ const Chat = () => {
         return { role: msg.role, content: msg.content };
       });
 
-      const response = await fetch(
-        `https://getvlmzpzgiihhslhcvq.supabase.co/functions/v1/chat`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-          },
-          body: JSON.stringify({ messages: messagesToSend }),
-        }
-      );
+      const { data, error } = await supabase.functions.invoke("chat", {
+        body: { messages: messagesToSend },
+      });
 
-      if (!response.ok) throw new Error("Failed to get response");
+      if (error) throw error;
 
-      const reader = response.body?.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-
-      if (!reader) throw new Error("No reader available");
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() || "";
-
-        for (const line of lines) {
-          if (line.startsWith("data: ")) {
-            const data = line.slice(6);
-            if (data === "[DONE]") continue;
-
-            try {
-              const parsed = JSON.parse(data);
-              const content = parsed.choices?.[0]?.delta?.content;
-              if (content) {
-                setMessages((prev) => {
-                  const newMessages = [...prev];
-                  newMessages[assistantMessageIndex] = {
-                    ...newMessages[assistantMessageIndex],
-                    content: newMessages[assistantMessageIndex].content + content,
-                  };
-                  return newMessages;
-                });
-              }
-            } catch (e) {
-              // Ignore parse errors for incomplete JSON
-            }
-          }
-        }
-      }
+      setMessages((prev) => {
+        const newMessages = [...prev];
+        newMessages[assistantMessageIndex] = {
+          role: "assistant",
+          content: data.message,
+        };
+        return newMessages;
+      });
     } catch (error) {
       console.error("Chat error:", error);
       setMessages((prev) => prev.slice(0, -1));

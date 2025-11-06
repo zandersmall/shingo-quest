@@ -38,7 +38,7 @@ serve(async (req) => {
           ...messages
         ],
         max_completion_tokens: 2000,
-        stream: true,
+        stream: false, // Temporarily disabled until OpenAI org is verified
       }),
     });
 
@@ -48,16 +48,11 @@ serve(async (req) => {
       throw new Error(`OpenAI API error: ${response.status}`);
     }
 
-    console.log('Streaming response received');
+    const data = await response.json();
+    const generatedText = data.choices[0].message.content;
 
-    // Return the stream directly
-    return new Response(response.body, {
-      headers: { 
-        ...corsHeaders, 
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive',
-      },
+    return new Response(JSON.stringify({ message: generatedText }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
     console.error('Error in chat function:', error);
