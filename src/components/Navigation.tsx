@@ -1,4 +1,4 @@
-import { Home, BookOpen, BrainCircuit, CreditCard } from "lucide-react";
+import { Home, BookOpen, BrainCircuit, CreditCard, MessageCircle } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
@@ -7,6 +7,7 @@ const navItems = [
   { to: "/lessons", icon: BookOpen, label: "Lessons" },
   { to: "/quizzes", icon: BrainCircuit, label: "Quizzes" },
   { to: "/flashcards", icon: CreditCard, label: "Flashcards" },
+  { to: "/chat", icon: MessageCircle, label: "AI Chat" },
 ];
 
 const Navigation = () => {
