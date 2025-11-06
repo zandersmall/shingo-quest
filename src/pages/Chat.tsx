@@ -120,24 +120,30 @@ const Chat = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
       <Navigation />
-      <main className="max-w-4xl mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-            Japanese Learning Assistant
+      <main className="w-full px-4 py-8">
+        <div className="mb-8 text-center">
+          <h1 className="text-5xl font-bold mb-3 bg-gradient-to-r from-red-500 via-primary to-red-600 bg-clip-text text-transparent">
+            先生ボット • Sensei Bot
           </h1>
-          <p className="text-muted-foreground">
-            Ask me about Japanese language, culture, road signs, or driving in Japan! You can also upload images.
+          <p className="text-muted-foreground text-lg">
+            Your Japanese learning and driving guide | 日本語学習とドライブガイド
           </p>
         </div>
 
-        <Card className="p-4 h-[600px] flex flex-col">
+        <Card className="p-6 h-[calc(100vh-280px)] flex flex-col border-2 border-primary/20 shadow-xl">
           <div className="flex-1 overflow-y-auto mb-4 space-y-4">
             {messages.length === 0 && (
               <div className="h-full flex items-center justify-center text-muted-foreground">
-                <div className="text-center">
-                  <Bot className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <p>Start a conversation about Japanese or driving in Japan!</p>
-                  <p className="text-sm mt-2">You can also upload images of road signs</p>
+                <div className="text-center max-w-2xl">
+                  <div className="text-6xl mb-4">🎌</div>
+                  <Bot className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                  <p className="text-xl font-semibold mb-2">こんにちは！Welcome to Sensei Bot!</p>
+                  <p className="text-muted-foreground">
+                    Ask me about Japanese language, culture, road signs, or driving in Japan!
+                  </p>
+                  <p className="text-sm mt-2 text-muted-foreground/80">
+                    You can also upload images of road signs for detailed explanations
+                  </p>
                 </div>
               </div>
             )}
@@ -149,28 +155,28 @@ const Chat = () => {
                 }`}
               >
                 {message.role === "assistant" && (
-                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <Bot className="w-5 h-5 text-primary" />
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-red-500 to-primary flex items-center justify-center flex-shrink-0 shadow-lg">
+                    <span className="text-xl">先</span>
                   </div>
                 )}
                 <div
-                  className={`rounded-lg px-4 py-2 max-w-[80%] ${
+                  className={`rounded-lg px-4 py-3 max-w-[80%] ${
                     message.role === "user"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted"
+                      ? "bg-primary text-primary-foreground shadow-md"
+                      : "bg-muted border border-primary/10 shadow-sm"
                   }`}
                 >
                   {message.image && (
                     <img 
                       src={message.image} 
                       alt="Uploaded" 
-                      className="max-w-full rounded-lg mb-2 max-h-64 object-contain"
+                      className="max-w-full rounded-lg mb-2 max-h-64 object-contain border border-primary/20"
                     />
                   )}
                   <p className="whitespace-pre-wrap">{message.content}</p>
                 </div>
                 {message.role === "user" && (
-                  <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center flex-shrink-0 shadow-lg">
                     <User className="w-5 h-5 text-primary-foreground" />
                   </div>
                 )}
@@ -178,11 +184,11 @@ const Chat = () => {
             ))}
             {isLoading && (
               <div className="flex gap-3 justify-start">
-                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <Bot className="w-5 h-5 text-primary animate-pulse" />
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-red-500 to-primary flex items-center justify-center flex-shrink-0 shadow-lg">
+                  <span className="text-xl animate-pulse">先</span>
                 </div>
-                <div className="rounded-lg px-4 py-2 bg-muted">
-                  <p className="text-muted-foreground">Thinking...</p>
+                <div className="rounded-lg px-4 py-3 bg-muted border border-primary/10 shadow-sm">
+                  <p className="text-muted-foreground animate-pulse">Sensei is thinking... 考え中...</p>
                 </div>
               </div>
             )}
@@ -229,7 +235,7 @@ const Chat = () => {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Ask about Japanese or driving in Japan..."
+                placeholder="Ask Sensei about Japanese or driving... 日本語で質問してください"
                 className="min-h-[60px] max-h-[120px]"
                 disabled={isLoading}
               />
