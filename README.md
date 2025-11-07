@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Shingō Quest 🚦
 
 **Master Japanese Road Signs** - A gamified learning platform for mastering Japanese traffic signs and road regulations.
@@ -178,7 +179,10 @@ This project is open source and available under the MIT License.
 - Japanese road sign images and content
 - Built with modern web technologies for optimal learning experience
 
+## 🌐 Live Demo
+
+Visit the live application: **https://quest-ja.vercel.app**
+
 ---
 
 **Made with ❤️ for Japanese language learners and driving test candidates**
-
