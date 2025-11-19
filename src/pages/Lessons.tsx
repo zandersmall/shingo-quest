@@ -72,12 +72,13 @@ const Lessons = () => {
     }
   }, [user, authLoading, navigate]);
 
-  // Refresh lesson progress when component mounts or becomes visible
+  // Refresh lesson progress when user changes
   useEffect(() => {
     if (user) {
       refreshLessons();
     }
-  }, [user, refreshLessons]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   const getLessonData = (lessonId: number) => {
     const lessonProgress = lessonProgressData.find(l => parseInt(l.lesson_id) === lessonId);
