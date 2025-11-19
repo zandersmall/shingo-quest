@@ -84,7 +84,6 @@ const LessonView = () => {
         
         // Mark lesson as complete
         await updateLesson(lesson.id.toString(), {
-          lesson_id: lesson.id.toString(),
           completed: true,
           progress: 100,
           xp_earned: wasAlreadyCompleted ? 0 : lesson.xp

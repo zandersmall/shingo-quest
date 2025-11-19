@@ -129,18 +129,45 @@ export function useLessonProgress() {
   const updateLesson = async (lessonId: string, updates: Partial<LessonProgress>) => {
     if (!user) return;
 
-    const { error } = await supabase
+    // First, check if a record exists
+    const { data: existing } = await supabase
       .from('lesson_progress')
-      .upsert({
-        user_id: user.id,
-        lesson_id: lessonId,
-        ...updates
-      });
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('lesson_id', lessonId)
+      .maybeSingle();
 
-    if (error) {
-      console.error('Error updating lesson:', error);
+    if (existing) {
+      // Update existing record
+      const { error } = await supabase
+        .from('lesson_progress')
+        .update(updates)
+        .eq('user_id', user.id)
+        .eq('lesson_id', lessonId);
+
+      if (error) {
+        console.error('Error updating lesson:', error);
+      } else {
+        fetchLessons();
+      }
     } else {
-      fetchLessons();
+      // Insert new record
+      const { error } = await supabase
+        .from('lesson_progress')
+        .insert({
+          user_id: user.id,
+          lesson_id: lessonId,
+          progress: 0,
+          completed: false,
+          xp_earned: 0,
+          ...updates
+        });
+
+      if (error) {
+        console.error('Error inserting lesson:', error);
+      } else {
+        fetchLessons();
+      }
     }
   };
 
