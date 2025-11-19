@@ -65,10 +65,6 @@ const Chat = () => {
     setSelectedImage(null);
     setIsLoading(true);
 
-    // Create a placeholder for streaming response
-    const assistantMessageIndex = messages.length + 1;
-    setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
-
     try {
       const messagesToSend = [...messages, userMessage].map(msg => {
         if (msg.image) {
@@ -89,17 +85,12 @@ const Chat = () => {
 
       if (error) throw error;
 
-      setMessages((prev) => {
-        const newMessages = [...prev];
-        newMessages[assistantMessageIndex] = {
-          role: "assistant",
-          content: data.message,
-        };
-        return newMessages;
-      });
+      setMessages((prev) => [...prev, {
+        role: "assistant",
+        content: data.message,
+      }]);
     } catch (error) {
       console.error("Chat error:", error);
-      setMessages((prev) => prev.slice(0, -1));
       toast({
         title: "Error",
         description: "Failed to get response. Please try again.",
