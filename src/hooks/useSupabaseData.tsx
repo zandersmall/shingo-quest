@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 
@@ -101,16 +101,7 @@ export function useLessonProgress() {
   const [lessons, setLessons] = useState<LessonProgress[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (!user) {
-      setLoading(false);
-      return;
-    }
-
-    fetchLessons();
-  }, [user]);
-
-  const fetchLessons = async () => {
+  const fetchLessons = useCallback(async () => {
     if (!user) return;
 
     const { data, error } = await supabase
@@ -124,7 +115,16 @@ export function useLessonProgress() {
       setLessons(data || []);
     }
     setLoading(false);
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
+    fetchLessons();
+  }, [user, fetchLessons]);
 
   const updateLesson = async (lessonId: string, updates: Partial<LessonProgress>) => {
     if (!user) return;

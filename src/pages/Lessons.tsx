@@ -64,13 +64,20 @@ const lessons: Lesson[] = [
 const Lessons = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
-  const { lessons: lessonProgressData } = useLessonProgress();
+  const { lessons: lessonProgressData, refreshLessons } = useLessonProgress();
 
   useEffect(() => {
     if (!authLoading && !user) {
       navigate('/auth', { replace: true });
     }
   }, [user, authLoading, navigate]);
+
+  // Refresh lesson progress when component mounts or becomes visible
+  useEffect(() => {
+    if (user) {
+      refreshLessons();
+    }
+  }, [user, refreshLessons]);
 
   const getLessonData = (lessonId: number) => {
     const lessonProgress = lessonProgressData.find(l => parseInt(l.lesson_id) === lessonId);
